@@ -5,11 +5,3 @@ plugins {
 
 group "com.terraforged"
 version "0.0.1"
-
-repositories {
-    maven { url "https://io.terraforged.com/repository/maven/" }
-}
-
-dependencies {
-    compile("me.dags:Noise2D:0.6.0-SNAPSHOT")
-}
