@@ -134,7 +134,7 @@ public class DataReader implements AutoCloseable {
                 throw new IOException("Unexpected end of string: " + buffer.toString());
             }
 
-            if (!Character.isLetterOrDigit(c) && c != '.' && c != '-') {
+            if (!Character.isLetterOrDigit(c) && c != '.' && c != '-' && c != '_') {
                 break;
             }
 

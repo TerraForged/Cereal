@@ -124,7 +124,7 @@ public class DataWriter implements AutoCloseable {
     private static boolean escape(String in) {
         for (int i = 0; i < in.length(); i++) {
             char c = in.charAt(i);
-            if (!Character.isLetterOrDigit(c)) {
+            if (!Character.isLetterOrDigit(c) && c != '_') {
                 return true;
             }
         }

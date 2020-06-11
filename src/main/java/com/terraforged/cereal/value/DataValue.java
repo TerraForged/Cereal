@@ -75,6 +75,10 @@ public class DataValue {
         return value == null ? "null" : value.toString();
     }
 
+    public <E extends Enum<E>> E asEnum(Class<E> type) {
+        return Enum.valueOf(type, asString());
+    }
+
     public DataList asList() {
         return this instanceof DataList ? (DataList) this : DataList.NULL_LIST;
     }
@@ -132,6 +136,14 @@ public class DataValue {
         if (value instanceof Boolean) {
             return new DataValue(value);
         }
+
+        if (value instanceof SpecName) {
+            String name = ((SpecName) value).getSpecName();
+            return DataSpecs.getSpec(name).serialize(value);
+        }
+        if (value instanceof Enum<?>) {
+            return new DataValue(((Enum<?>) value).name());
+        }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
             DataList data = new DataList(list.size());
@@ -147,10 +159,6 @@ public class DataValue {
                 data.add(e.getKey().toString(), DataValue.of(e.getValue()));
             }
             return data;
-        }
-        if (value instanceof SpecName) {
-            String name = ((SpecName) value).getSpecName();
-            return DataSpecs.getSpec(name).serialize(value);
         }
         if (value != null) {
             String name = value.getClass().getSimpleName();
