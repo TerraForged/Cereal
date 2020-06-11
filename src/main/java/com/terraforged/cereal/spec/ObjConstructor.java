@@ -4,5 +4,5 @@ import com.terraforged.cereal.value.DataObject;
 
 public interface ObjConstructor<T> {
 
-    <C extends Context> T create(DataObject data, DataSpec<T> spec, C context);
+    T create(DataObject data, DataSpec<T> spec, Context context);
 }
