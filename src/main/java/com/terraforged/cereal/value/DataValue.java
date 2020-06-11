@@ -136,13 +136,12 @@ public class DataValue {
         if (value instanceof Boolean) {
             return new DataValue(value);
         }
-
+        if (value instanceof Enum<?>) {
+            return new DataValue(((Enum<?>) value).name());
+        }
         if (value instanceof SpecName) {
             String name = ((SpecName) value).getSpecName();
             return DataSpecs.getSpec(name).serialize(value);
-        }
-        if (value instanceof Enum<?>) {
-            return new DataValue(((Enum<?>) value).name());
         }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
