@@ -1,10 +1,7 @@
 package com.terraforged.cereal.spec;
 
-import com.terraforged.cereal.value.DataValue;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Supplier;
 
 public class DataSpecs {
 
@@ -24,17 +21,5 @@ public class DataSpecs {
             throw new NullPointerException("Missing spec: " + name);
         }
         return spec;
-    }
-
-    public static Supplier<DataValue> getDefault(String name) {
-        return new Supplier<DataValue>() {
-
-            private final String typeName = name;
-
-            @Override
-            public DataValue get() {
-                return specs.get(typeName).createDefault();
-            }
-        };
     }
 }

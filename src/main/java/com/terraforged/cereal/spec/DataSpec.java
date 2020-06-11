@@ -17,9 +17,9 @@ public class DataSpec<T> {
     private final String name;
     private final Class<T> type;
     private final boolean ignoreDefaults;
+    private final DataFactory<T> constructor;
     private final Map<String, Function<T, ?>> accessors;
     private final Map<String, Supplier<DataValue>> defaults;
-    private final ObjConstructor<T> constructor;
 
     public DataSpec(Builder<T> builder) {
         this.name = builder.name;
@@ -28,22 +28,6 @@ public class DataSpec<T> {
         this.accessors = builder.accessors;
         this.constructor = builder.constructor;
         this.ignoreDefaults = builder.ignoreDefaults;
-    }
-
-    private DataValue getValue(String key, DataObject holder) {
-        DataValue value = holder.get(key);
-        if (value.isNonNull()) {
-            return value;
-        }
-        return getDefault(key);
-    }
-
-    private DataValue getDefault(String name) {
-        Supplier<DataValue> value = defaults.get(name);
-        if (value == null) {
-            return DataValue.NULL;
-        }
-        return value.get();
     }
 
     public String getName() {
@@ -93,11 +77,11 @@ public class DataSpec<T> {
         return deserialize(data, type, Context.NONE);
     }
 
-    public <Ctx> T deserialize(DataObject data, Context context) {
+    public T deserialize(DataObject data, Context context) {
         return constructor.create(data, this, context);
     }
 
-    public <V, Ctx> V deserialize(DataObject data, Class<V> type, Context context) {
+    public <V> V deserialize(DataObject data, Class<V> type, Context context) {
         if (type.isAssignableFrom(getType())) {
             T t = deserialize(data, context);
             if (type.isInstance(t)) {
@@ -108,17 +92,27 @@ public class DataSpec<T> {
         throw new RuntimeException("Invalid type: " + type);
     }
 
-    public DataObject createDefault() {
-        DataObject data = new DataObject(name);
-        defaults.forEach((key, supplier) -> data.add(key, DataValue.of(supplier.get())));
-        return data;
+    private DataValue getValue(String key, DataObject holder) {
+        DataValue value = holder.get(key);
+        if (value.isNonNull()) {
+            return value;
+        }
+        return getDefault(key);
     }
 
-    public static <T> Builder<T> builder(Class<T> type, ObjConstructor<T> constructor) {
+    private DataValue getDefault(String name) {
+        Supplier<DataValue> value = defaults.get(name);
+        if (value == null) {
+            return DataValue.NULL;
+        }
+        return value.get();
+    }
+
+    public static <T> Builder<T> builder(Class<T> type, DataFactory<T> constructor) {
         return builder(type.getSimpleName(), type, constructor);
     }
 
-    public static <T> Builder<T> builder(String name, Class<T> type, ObjConstructor<T> constructor) {
+    public static <T> Builder<T> builder(String name, Class<T> type, DataFactory<T> constructor) {
         return new Builder<>(name, type, constructor);
     }
 
@@ -126,13 +120,13 @@ public class DataSpec<T> {
 
         private final String name;
         private final Class<T> type;
-        private final ObjConstructor<T> constructor;
+        private final DataFactory<T> constructor;
         private final Map<String, Function<T, ?>> accessors = new LinkedHashMap<>();
         private final Map<String, Supplier<DataValue>> defaults = new LinkedHashMap<>();
 
         private boolean ignoreDefaults = true;
 
-        public Builder(String name, Class<T> type, ObjConstructor<T> constructor) {
+        public Builder(String name, Class<T> type, DataFactory<T> constructor) {
             this.name = name;
             this.type = type;
             this.constructor = constructor;
@@ -149,19 +143,15 @@ public class DataSpec<T> {
             return this;
         }
 
-        public <V> Builder<T> add(String key, Class<V> type, Function<T, V> accessor) {
-            return add(key, type.getSimpleName(), type, accessor);
+        public <V> Builder<T> addObj(String key, Function<T, V> accessor) {
+            accessors.put(key, accessor);
+            defaults.put(key, () -> DataObject.NULL_OBJ);
+            return this;
         }
 
         public <V> Builder<T> addList(String key, Function<T, List<V>> accessor) {
             accessors.put(key, accessor);
-            defaults.put(key, () -> DataList.NULL);
-            return this;
-        }
-
-        public <V> Builder<T> add(String key, String name, Class<V> type, Function<T, V> accessor) {
-            accessors.put(key, accessor);
-            defaults.put(key, DataSpecs.getDefault(name));
+            defaults.put(key, () -> DataList.NULL_LIST);
             return this;
         }
 
