@@ -1,0 +1,2 @@
+# Cereal
+Experimental serialization lib
