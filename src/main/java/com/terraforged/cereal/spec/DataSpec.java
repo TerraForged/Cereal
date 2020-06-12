@@ -138,7 +138,8 @@ public class DataSpec<T> {
 
         public <V> Builder<T> add(String key, Object value, Function<T, V> accessor) {
             accessors.put(key, accessor);
-            return add(key, DataValue.of(value), accessor);
+            defaults.put(key, new DefaultData(DataValue.lazy(value)));
+            return this;
         }
 
         public <V> Builder<T> add(String key, DataValue value, Function<T, V> accessor) {
@@ -153,15 +154,21 @@ public class DataSpec<T> {
             return this;
         }
 
-        public <V> Builder<T> addObj(String key, Class<?> type, Function<T, V> accessor) {
+        public <V> Builder<T> addObj(String key, Class<V> type, Function<T, ? extends V> accessor) {
             accessors.put(key, accessor);
-            defaults.put(key, new DefaultData(type));
+            defaults.put(key, new DefaultData(type, DataObject.NULL_OBJ));
             return this;
         }
 
         public <V> Builder<T> addList(String key, Function<T, List<V>> accessor) {
             accessors.put(key, accessor);
             defaults.put(key, new DefaultData(DataList.NULL_LIST));
+            return this;
+        }
+
+        public <V> Builder<T> addList(String key, Class<V> type, Function<T, List<? extends V>> accessor) {
+            accessors.put(key, accessor);
+            defaults.put(key, new DefaultData(type, DataList.NULL_LIST));
             return this;
         }
 

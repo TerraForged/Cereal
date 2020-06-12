@@ -7,8 +7,6 @@ import java.util.function.Supplier;
 
 public class DefaultData {
 
-    private static final Supplier<DataValue> NONE = () -> DataValue.NULL;
-
     private final Class<?> type;
     private final Supplier<DataValue> supplier;
 
@@ -17,8 +15,8 @@ public class DefaultData {
         this.supplier = supplier;
     }
 
-    public DefaultData(Class<?> type) {
-        this(type, NONE);
+    public DefaultData(Class<?> type, DataValue value) {
+        this(type, () -> value);
     }
 
     public DefaultData(DataValue value) {
@@ -30,11 +28,11 @@ public class DefaultData {
     }
 
     public boolean hasSpec() {
-        return type != Object.class && supplier == NONE;
+        return type != Object.class;
     }
 
     public boolean hasValue() {
-        return type == Object.class && supplier != NONE;
+        return type == Object.class;
     }
 
     public List<DataSpec<?>> getSpecs() {

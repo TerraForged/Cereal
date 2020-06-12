@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class DataValue {
 
@@ -206,5 +207,21 @@ public class DataValue {
             }
         }
         return NULL;
+    }
+
+    public static Supplier<DataValue> lazy(Object value) {
+        return new Supplier<DataValue>() {
+
+            private final Object val = value;
+            private DataValue data = null;
+
+            @Override
+            public DataValue get() {
+                if (data == null) {
+                    data = DataValue.of(val);
+                }
+                return data;
+            }
+        };
     }
 }
