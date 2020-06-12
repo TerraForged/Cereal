@@ -5,27 +5,27 @@ import com.terraforged.cereal.value.DataList;
 import com.terraforged.cereal.value.DataObject;
 import com.terraforged.cereal.value.DataValue;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class DataSpec<T> {
 
     private final String name;
     private final Class<T> type;
     private final DataFactory<T> constructor;
+    private final Map<String, DefaultData> defaults;
     private final Map<String, Function<T, ?>> accessors;
-    private final Map<String, Supplier<DataValue>> defaults;
 
     public DataSpec(Builder<T> builder) {
         this.name = builder.name;
         this.type = builder.type;
-        this.defaults = builder.defaults;
-        this.accessors = builder.accessors;
         this.constructor = builder.constructor;
+        this.defaults = Collections.unmodifiableMap(builder.defaults);
+        this.accessors = Collections.unmodifiableMap(builder.accessors);
     }
 
     public String getName() {
@@ -94,6 +94,10 @@ public class DataSpec<T> {
         throw new RuntimeException("Invalid type: " + type);
     }
 
+    public Map<String, DefaultData> getDefaults() {
+        return defaults;
+    }
+
     private DataValue getValue(String key, DataObject holder) {
         DataValue value = holder.get(key);
         if (value.isNonNull()) {
@@ -103,11 +107,11 @@ public class DataSpec<T> {
     }
 
     private DataValue getDefault(String name) {
-        Supplier<DataValue> value = defaults.get(name);
-        if (value == null) {
-            return DataValue.NULL;
+        DefaultData data = defaults.get(name);
+        if (data.hasValue()) {
+            return data.getValue();
         }
-        return value.get();
+        return DataValue.NULL;
     }
 
     public static <T> Builder<T> builder(Class<T> type, DataFactory<T> constructor) {
@@ -123,10 +127,8 @@ public class DataSpec<T> {
         private final String name;
         private final Class<T> type;
         private final DataFactory<T> constructor;
+        private final Map<String, DefaultData> defaults = new LinkedHashMap<>();
         private final Map<String, Function<T, ?>> accessors = new LinkedHashMap<>();
-        private final Map<String, Supplier<DataValue>> defaults = new LinkedHashMap<>();
-
-        private boolean ignoreDefaults = true;
 
         public Builder(String name, Class<T> type, DataFactory<T> constructor) {
             this.name = name;
@@ -141,24 +143,25 @@ public class DataSpec<T> {
 
         public <V> Builder<T> add(String key, DataValue value, Function<T, V> accessor) {
             accessors.put(key, accessor);
-            defaults.put(key, () -> value);
+            defaults.put(key, new DefaultData(value));
             return this;
         }
 
         public <V> Builder<T> addObj(String key, Function<T, V> accessor) {
             accessors.put(key, accessor);
-            defaults.put(key, () -> DataObject.NULL_OBJ);
+            defaults.put(key, new DefaultData(DataObject.NULL_OBJ));
+            return this;
+        }
+
+        public <V> Builder<T> addObj(String key, Class<?> type, Function<T, V> accessor) {
+            accessors.put(key, accessor);
+            defaults.put(key, new DefaultData(type));
             return this;
         }
 
         public <V> Builder<T> addList(String key, Function<T, List<V>> accessor) {
             accessors.put(key, accessor);
-            defaults.put(key, () -> DataList.NULL_LIST);
-            return this;
-        }
-
-        public Builder<T> defaults() {
-            ignoreDefaults = false;
+            defaults.put(key, new DefaultData(DataList.NULL_LIST));
             return this;
         }
 

@@ -1,8 +1,8 @@
 package com.terraforged.cereal.value;
 
+import com.terraforged.cereal.serial.DataWriter;
 import com.terraforged.cereal.spec.DataSpecs;
 import com.terraforged.cereal.spec.SpecName;
-import com.terraforged.cereal.serial.DataWriter;
 
 import java.io.IOException;
 import java.util.List;
