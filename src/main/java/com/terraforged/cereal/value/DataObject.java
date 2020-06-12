@@ -40,6 +40,19 @@ public class DataObject extends DataValue implements Iterable<Map.Entry<String, 
         return data.size();
     }
 
+    public boolean has(String key) {
+        return data.containsKey(key);
+    }
+
+    public boolean contains(Object value) {
+        for (DataValue v : data.values()) {
+            if (value.equals(v.value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public DataValue get(String key) {
         return data.getOrDefault(key, NULL);
     }

@@ -41,6 +41,15 @@ public class DataList extends DataValue implements Iterable<DataValue> {
         return data.size();
     }
 
+    public boolean contains(Object value) {
+        for (DataValue v : this) {
+            if (value.equals(v.value)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public DataValue get(int index) {
         if (index < data.size()) {
             DataValue value = data.get(index);

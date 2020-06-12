@@ -2,34 +2,27 @@ package com.terraforged.cereal.spec;
 
 import com.terraforged.cereal.value.DataObject;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 public class Context {
 
-    public static final Context NONE = new Context(-1, DataObject.NULL_OBJ);
+    public static final Context NONE = new Context(DataObject.NULL_OBJ);
 
     private final DataObject data;
-    private final AtomicInteger id = new AtomicInteger();
 
     public Context() {
-        this(0, new DataObject());
+        this(new DataObject());
     }
 
-    public Context(int id) {
-        this(id, new DataObject());
-    }
-
-    public Context(int id, DataObject data) {
-        this.id.set(id);
+    public Context(DataObject data) {
         this.data = data;
     }
 
-    public int getId() {
-        return id.get();
+    public Context skipDefaultValues() {
+        data.add("skip_defaults", true);
+        return this;
     }
 
-    public int nextId() {
-        return id.incrementAndGet();
+    public boolean skipDefaults() {
+        return data.get("skip_defaults").asBool();
     }
 
     public DataObject getData() {

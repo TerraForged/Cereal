@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class DataValue {
 
@@ -33,6 +36,22 @@ public class DataValue {
 
     public boolean isNonNull() {
         return !isNull();
+    }
+
+    public boolean isNum() {
+        return value instanceof Number;
+    }
+
+    public boolean isString() {
+        return value instanceof String;
+    }
+
+    public boolean isBool() {
+        return value instanceof Boolean;
+    }
+
+    public boolean isEnum() {
+        return value instanceof Enum<?>;
     }
 
     public Number asNum() {
@@ -71,12 +90,35 @@ public class DataValue {
         return asNum().doubleValue();
     }
 
+    public boolean asBool() {
+        if (value instanceof Boolean) {
+            return (boolean) value;
+        }
+        if (value instanceof String) {
+            return value.toString().equalsIgnoreCase("true");
+        }
+        return asNum().byteValue() == 1;
+    }
+
     public String asString() {
         return value == null ? "null" : value.toString();
     }
 
     public <E extends Enum<E>> E asEnum(Class<E> type) {
-        return Enum.valueOf(type, asString());
+        if (type.isInstance(value)) {
+            return type.cast(value);
+        }
+        if (isString()) {
+            return Enum.valueOf(type, asString());
+        }
+        if (isNum()) {
+            int ordinal = asInt();
+            E[] values = type.getEnumConstants();
+            if (ordinal < values.length) {
+                return values[ordinal];
+            }
+        }
+        throw new IllegalArgumentException("Value is not an Enum");
     }
 
     public DataList asList() {
@@ -91,14 +133,12 @@ public class DataValue {
         return this instanceof DataList ? (DataList) this : new DataList().add(this);
     }
 
-    public boolean asBool() {
-        if (value instanceof Boolean) {
-            return (boolean) value;
-        }
-        if (value instanceof String) {
-            return value.toString().equalsIgnoreCase("true");
-        }
-        return asNum().byteValue() == 1;
+    public <T> T map(Function<DataValue, T> mapper) {
+        return mapper.apply(this);
+    }
+
+    public <T> Optional<T> map(Predicate<DataValue> predicate, Function<DataValue, T> mapper) {
+        return Optional.of(this).filter(predicate).map(mapper);
     }
 
     public void appendTo(DataWriter writer) throws IOException {
@@ -107,7 +147,7 @@ public class DataValue {
 
     @Override
     public int hashCode() {
-        return Objects.hash(value);
+        return value == null ? -1 : value.hashCode();
     }
 
     @Override
@@ -137,7 +177,7 @@ public class DataValue {
             return new DataValue(value);
         }
         if (value instanceof Enum<?>) {
-            return new DataValue(((Enum<?>) value).name());
+            return new DataValue(value);
         }
         if (value instanceof SpecName) {
             String name = ((SpecName) value).getSpecName();

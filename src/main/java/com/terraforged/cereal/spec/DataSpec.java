@@ -16,7 +16,6 @@ public class DataSpec<T> {
 
     private final String name;
     private final Class<T> type;
-    private final boolean ignoreDefaults;
     private final DataFactory<T> constructor;
     private final Map<String, Function<T, ?>> accessors;
     private final Map<String, Supplier<DataValue>> defaults;
@@ -27,7 +26,6 @@ public class DataSpec<T> {
         this.defaults = builder.defaults;
         this.accessors = builder.accessors;
         this.constructor = builder.constructor;
-        this.ignoreDefaults = builder.ignoreDefaults;
     }
 
     public String getName() {
@@ -52,14 +50,18 @@ public class DataSpec<T> {
     }
 
     public DataValue serialize(Object value) {
+        return serialize(value, Context.NONE);
+    }
+
+    public DataValue serialize(Object value, Context context) {
         if (getType().isInstance(value)) {
+            boolean skipDefaults = context.skipDefaults();
             T t = getType().cast(value);
             DataObject root = new DataObject(name);
             for (Map.Entry<String, Function<T, ?>> e : accessors.entrySet()) {
                 Object o = e.getValue().apply(t);
                 DataValue val = DataValue.of(o);
-                DataValue def = getDefault(e.getKey());
-                if (val.equals(def) && ignoreDefaults) {
+                if (skipDefaults && val.equals(getDefault(e.getKey()))) {
                     continue;
                 }
                 root.add(e.getKey(), val);
