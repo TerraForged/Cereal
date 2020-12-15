@@ -37,23 +37,39 @@ public class Cereal {
     }
 
     public static void write(Object object, Writer writer) throws IOException {
+        write(object, writer, Context.NONE);
+    }
+
+    public static void write(Object object, Writer writer, Context context) throws IOException {
         DataWriter dataWriter = new DataWriter(writer);
-        DataValue value = serialize(object);
+        DataValue value = serialize(object, context);
         dataWriter.write(value);
     }
 
     public static void write(Object object, String type, Writer writer) throws IOException {
+        write(object, type, writer, Context.NONE);
+    }
+
+    public static void write(Object object, String type, Writer writer, Context context) throws IOException {
         DataWriter dataWriter = new DataWriter(writer);
-        DataValue value = serialize(type, object);
+        DataValue value = serialize(type, object, context);
         dataWriter.write(value);
     }
 
     public static DataValue serialize(Object value) {
-        return DataValue.of(value);
+        return serialize(value, Context.NONE);
+    }
+
+    public static DataValue serialize(Object value, Context context) {
+        return DataValue.of(value, context);
     }
 
     public static DataValue serialize(String type, Object value) {
-        return DataSpecs.getSpec(type).serialize(value);
+        return serialize(type, value, Context.NONE);
+    }
+
+    public static DataValue serialize(String type, Object value, Context context) {
+        return DataSpecs.getSpec(type).serialize(value, context);
     }
 
     public static Object deserialize(DataObject data) {

@@ -1,6 +1,7 @@
 package com.terraforged.cereal.value;
 
 import com.terraforged.cereal.serial.DataWriter;
+import com.terraforged.cereal.spec.Context;
 import com.terraforged.cereal.spec.DataSpecs;
 import com.terraforged.cereal.spec.SpecName;
 
@@ -165,6 +166,10 @@ public class DataValue {
     }
 
     public static DataValue of(Object value) {
+        return of(value, Context.NONE);
+    }
+
+    public static DataValue of(Object value, Context context) {
         if (value instanceof DataValue) {
             return (DataValue) value;
         }
@@ -182,13 +187,13 @@ public class DataValue {
         }
         if (value instanceof SpecName) {
             String name = ((SpecName) value).getSpecName();
-            return DataSpecs.getSpec(name).serialize(value);
+            return DataSpecs.getSpec(name).serialize(value, context);
         }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
             DataList data = new DataList(list.size());
             for (Object o : list) {
-                data.add(DataValue.of(o));
+                data.add(DataValue.of(o, context));
             }
             return data;
         }
@@ -196,14 +201,14 @@ public class DataValue {
             Map<?, ?> map = (Map<?, ?>) value;
             DataObject data = new DataObject();
             for (Map.Entry<?, ?> e : map.entrySet()) {
-                data.add(e.getKey().toString(), DataValue.of(e.getValue()));
+                data.add(e.getKey().toString(), DataValue.of(e.getValue(), context));
             }
             return data;
         }
         if (value != null) {
             String name = value.getClass().getSimpleName();
             if (DataSpecs.hasSpec(name)) {
-                return DataSpecs.getSpec(name).serialize(value);
+                return DataSpecs.getSpec(name).serialize(value, context);
             }
         }
         return NULL;

@@ -18,7 +18,7 @@ public class DataSpec<T> {
     private final Class<T> type;
     private final DataFactory<T> constructor;
     private final Map<String, DefaultData> defaults;
-    private final Map<String, Function<T, ?>> accessors;
+    private final Map<String, DataAccessor<T, ?>> accessors;
 
     public DataSpec(Builder<T> builder) {
         this.name = builder.name;
@@ -58,9 +58,9 @@ public class DataSpec<T> {
             boolean skipDefaults = context.skipDefaults();
             T t = getType().cast(value);
             DataObject root = new DataObject(name);
-            for (Map.Entry<String, Function<T, ?>> e : accessors.entrySet()) {
-                Object o = e.getValue().apply(t);
-                DataValue val = DataValue.of(o);
+            for (Map.Entry<String, DataAccessor<T, ?>> e : accessors.entrySet()) {
+                Object o = e.getValue().access(t, context);
+                DataValue val = DataValue.of(o, context);
                 if (skipDefaults && val.equals(getDefault(e.getKey()))) {
                     continue;
                 }
@@ -128,7 +128,7 @@ public class DataSpec<T> {
         private final Class<T> type;
         private final DataFactory<T> constructor;
         private final Map<String, DefaultData> defaults = new LinkedHashMap<>();
-        private final Map<String, Function<T, ?>> accessors = new LinkedHashMap<>();
+        private final Map<String, DataAccessor<T, ?>> accessors = new LinkedHashMap<>();
 
         public Builder(String name, Class<T> type, DataFactory<T> constructor) {
             this.name = name;
@@ -137,36 +137,60 @@ public class DataSpec<T> {
         }
 
         public <V> Builder<T> add(String key, Object value, Function<T, V> accessor) {
+            return add(key, value, DataAccessor.wrap(accessor));
+        }
+
+        public <V> Builder<T> add(String key, Object value, DataAccessor<T, V> accessor) {
             accessors.put(key, accessor);
             defaults.put(key, new DefaultData(DataValue.lazy(value)));
             return this;
         }
 
         public <V> Builder<T> add(String key, DataValue value, Function<T, V> accessor) {
+            return add(key, value, DataAccessor.wrap(accessor));
+        }
+
+        public <V> Builder<T> add(String key, DataValue value, DataAccessor<T, V> accessor) {
             accessors.put(key, accessor);
             defaults.put(key, new DefaultData(value));
             return this;
         }
 
         public <V> Builder<T> addObj(String key, Function<T, V> accessor) {
+            return addObj(key, DataAccessor.wrap(accessor));
+        }
+
+        public <V> Builder<T> addObj(String key, DataAccessor<T, V> accessor) {
             accessors.put(key, accessor);
             defaults.put(key, new DefaultData(DataObject.NULL_OBJ));
             return this;
         }
 
         public <V> Builder<T> addObj(String key, Class<V> type, Function<T, ? extends V> accessor) {
+            return addObj(key, type, DataAccessor.wrap(accessor));
+        }
+
+        public <V> Builder<T> addObj(String key, Class<V> type, DataAccessor<T, ? extends V> accessor) {
             accessors.put(key, accessor);
             defaults.put(key, new DefaultData(type, DataObject.NULL_OBJ));
             return this;
         }
 
         public <V> Builder<T> addList(String key, Function<T, List<V>> accessor) {
+            return addList(key, DataAccessor.wrap(accessor));
+        }
+
+        public <V> Builder<T> addList(String key, DataAccessor<T, List<V>> accessor) {
             accessors.put(key, accessor);
             defaults.put(key, new DefaultData(DataList.NULL_LIST));
             return this;
         }
 
         public <V> Builder<T> addList(String key, Class<V> type, Function<T, List<? extends V>> accessor) {
+            return addList(key, type, DataAccessor.wrap(accessor));
+        }
+
+        public <V> Builder<T> addList(String key, Class<V> type, DataAccessor<T, List<? extends V>> accessor) {
             accessors.put(key, accessor);
             defaults.put(key, new DefaultData(type, DataList.NULL_LIST));
             return this;
