@@ -33,7 +33,7 @@ publishing {
                     password System.getenv("MAVEN_PASS")
                 }
                 name = "nexus"
-                url = "https://io.terraforged.com/repository/maven/"
+                url = "https://io.terraforged.com/maven/"
             }
         }
     }
