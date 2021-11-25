@@ -170,6 +170,10 @@ public class DataValue {
     }
 
     public static DataValue of(Object value, Context context) {
+        if (value instanceof SpecName) {
+            String name = ((SpecName) value).getSpecName();
+            return DataSpecs.getSpec(name).serialize(value, context);
+        }
         if (value instanceof DataValue) {
             return (DataValue) value;
         }
@@ -184,10 +188,6 @@ public class DataValue {
         }
         if (value instanceof Enum<?>) {
             return new DataValue(value);
-        }
-        if (value instanceof SpecName) {
-            String name = ((SpecName) value).getSpecName();
-            return DataSpecs.getSpec(name).serialize(value, context);
         }
         if (value instanceof List) {
             List<?> list = (List<?>) value;
