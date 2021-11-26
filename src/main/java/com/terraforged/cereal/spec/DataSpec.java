@@ -36,6 +36,10 @@ public class DataSpec<T> {
         return type;
     }
 
+    public <V extends Enum<V>> V getEnum(String key, DataObject holder, Class<V> type) {
+        return Enum.valueOf(type, getValue(key, holder).asString());
+    }
+
     public <V> V get(String key, DataObject holder, Function<DataValue, V> accessor) {
         return accessor.apply(getValue(key, holder));
     }
@@ -60,7 +64,7 @@ public class DataSpec<T> {
             DataObject root = new DataObject(name);
             for (Map.Entry<String, DataAccessor<T, ?>> e : accessors.entrySet()) {
                 Object o = e.getValue().access(t, context);
-                DataValue val = DataValue.of(o, context);
+                DataValue val = Cereal.serialize(o, context);
                 if (skipDefaults && val.equals(getDefault(e.getKey()))) {
                     continue;
                 }
@@ -137,6 +141,9 @@ public class DataSpec<T> {
         }
 
         public <V> Builder<T> add(String key, Object value, Function<T, V> accessor) {
+            if (value instanceof Enum<?>) {
+                return add(key, ((Enum<?>) value).name(), t -> ((Enum<?>) accessor.apply(t)).name());
+            }
             return add(key, value, DataAccessor.wrap(accessor));
         }
 
@@ -148,6 +155,11 @@ public class DataSpec<T> {
 
         public <V> Builder<T> add(String key, DataValue value, Function<T, V> accessor) {
             return add(key, value, DataAccessor.wrap(accessor));
+        }
+
+        public <V> Builder<T> adds(String key, Class<V> superType, Function<T, V> accessor) {
+            accessors.put(key, DataAccessor.wrap(accessor));
+            return this;
         }
 
         public <V> Builder<T> add(String key, DataValue value, DataAccessor<T, V> accessor) {

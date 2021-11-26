@@ -1,9 +1,7 @@
 package com.terraforged.cereal.value;
 
 import com.terraforged.cereal.serial.DataWriter;
-import com.terraforged.cereal.spec.Context;
-import com.terraforged.cereal.spec.DataSpecs;
-import com.terraforged.cereal.spec.SpecName;
+import com.terraforged.cereal.spec.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -165,15 +163,23 @@ public class DataValue {
         return asString();
     }
 
+    public boolean matchesType(DataValue other) {
+        if (getClass() != other.getClass()) {
+            return false;
+        }
+
+        if (value == null) {
+            return other.value == null;
+        }
+
+        return other.value != null && value.getClass() == other.value.getClass();
+    }
+
     public static DataValue of(Object value) {
         return of(value, Context.NONE);
     }
 
     public static DataValue of(Object value, Context context) {
-        if (value instanceof SpecName) {
-            String name = ((SpecName) value).getSpecName();
-            return DataSpecs.getSpec(name).serialize(value, context);
-        }
         if (value instanceof DataValue) {
             return (DataValue) value;
         }

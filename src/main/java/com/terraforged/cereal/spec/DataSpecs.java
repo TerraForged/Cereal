@@ -9,21 +9,42 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DataSpecs {
 
     private static final Map<String, DataSpec<?>> specs = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, SubSpec<?>> subSpecs = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, SubSpec<?>> subSpecLookup = new ConcurrentHashMap<>();
 
     public static void register(DataSpec<?> spec) {
         specs.put(spec.getName(), spec);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, V extends T> void registerSub(Class<T> type, DataSpec<V> subSpec) {
+        SubSpec<T> spec = (SubSpec<T>) subSpecs.computeIfAbsent(type, SubSpec::new);
+        spec.register(subSpec.getType(), subSpec);
+        subSpecLookup.put(subSpec.getType(), spec);
     }
 
     public static boolean hasSpec(String name) {
         return specs.containsKey(name);
     }
 
+    public static boolean isSubSpec(Object instance) {
+        return subSpecLookup.containsKey(instance.getClass());
+    }
+
     public static DataSpec<?> getSpec(String name) {
         DataSpec<?> spec = specs.get(name);
         if (spec == null) {
-            throw new NullPointerException("Missing spec: " + name);
+            throw new NullPointerException("Missing spec: '" + name + '\'');
         }
         return spec;
+    }
+
+    public static SubSpec<?> getSubSpec(Class<?> type) {
+        return subSpecs.get(type);
+    }
+
+    public static SubSpec<?> getSubSpec(Object instance) {
+        return subSpecLookup.get(instance.getClass());
     }
 
     public static <T> List<DataSpec<?>> getSpecs(Class<T> type) {

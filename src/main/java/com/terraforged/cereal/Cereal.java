@@ -2,8 +2,7 @@ package com.terraforged.cereal;
 
 import com.terraforged.cereal.serial.DataReader;
 import com.terraforged.cereal.serial.DataWriter;
-import com.terraforged.cereal.spec.Context;
-import com.terraforged.cereal.spec.DataSpecs;
+import com.terraforged.cereal.spec.*;
 import com.terraforged.cereal.value.DataList;
 import com.terraforged.cereal.value.DataObject;
 import com.terraforged.cereal.value.DataValue;
@@ -60,7 +59,20 @@ public class Cereal {
         return serialize(value, Context.NONE);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static DataValue serialize(Object value, Context context) {
+        if (value instanceof SpecName) {
+            String name = ((SpecName) value).getSpecName();
+            if (DataSpecs.hasSpec(name)) {
+                return DataSpecs.getSpec(name).serialize(value, context);
+            }
+        }
+
+        if (DataSpecs.isSubSpec(value)) {
+            SubSpec spec = DataSpecs.getSubSpec(value);
+            return spec.serialize(value, context);
+        }
+
         return DataValue.of(value, context);
     }
 
@@ -68,20 +80,32 @@ public class Cereal {
         return serialize(type, value, Context.NONE);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static DataValue serialize(String type, Object value, Context context) {
-        return DataSpecs.getSpec(type).serialize(value, context);
-    }
+        if (DataSpecs.hasSpec(type)) {
+            return DataSpecs.getSpec(type).serialize(value, context);
+        }
 
-    public static Object deserialize(DataObject data) {
-        return deserialize(data, Context.NONE);
-    }
+        if (DataSpecs.isSubSpec(value)) {
+            SubSpec spec = DataSpecs.getSubSpec(value);
+            return spec.serialize(value, context);
+        }
 
-    public static Object deserialize(DataObject data, Context context) {
-        return DataSpecs.getSpec(data.getType()).deserialize(data, context);
+        return DataValue.of(value, context);
     }
 
     public static <T> T deserialize(DataObject data, Class<T> type, Context context) {
-        return DataSpecs.getSpec(data.getType()).deserialize(data, type, context);
+        String spec = data.getType();
+        if (DataSpecs.hasSpec(spec)) {
+            return DataSpecs.getSpec(spec).deserialize(data, type, context);
+        }
+
+        SubSpec<?> subSpec = DataSpecs.getSubSpec(type);
+        if (subSpec == null) {
+            throw new RuntimeException(String.format("No spec registered for name: '%s' or type: '%s'", spec, type));
+        }
+
+        return type.cast(subSpec.deserialize(data, context));
     }
 
     public static <T> List<T> deserialize(DataList data, Class<T> type) {
