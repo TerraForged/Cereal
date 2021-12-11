@@ -10,8 +10,10 @@ import com.terraforged.cereal.value.DataValue;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Cereal {
 
@@ -59,21 +61,8 @@ public class Cereal {
         return serialize(value, Context.NONE);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static DataValue serialize(Object value, Context context) {
-        if (value instanceof SpecName) {
-            String name = ((SpecName) value).getSpecName();
-            if (DataSpecs.hasSpec(name)) {
-                return DataSpecs.getSpec(name).serialize(value, context);
-            }
-        }
-
-        if (DataSpecs.isSubSpec(value)) {
-            SubSpec spec = DataSpecs.getSubSpec(value);
-            return spec.serialize(value, context);
-        }
-
-        return DataValue.of(value, context);
+        return serializeInferred(value, context);
     }
 
     public static DataValue serialize(String type, Object value) {
@@ -84,6 +73,52 @@ public class Cereal {
     public static DataValue serialize(String type, Object value, Context context) {
         if (DataSpecs.hasSpec(type)) {
             return DataSpecs.getSpec(type).serialize(value, context);
+        }
+
+        if (DataSpecs.isSubSpec(value)) {
+            SubSpec spec = DataSpecs.getSubSpec(value);
+            return spec.serialize(value, context);
+        }
+
+        return DataValue.of(value, context);
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static DataValue serializeInferred(Object value, Context context) {
+        if (value.getClass().isArray()) {
+            int size = Array.getLength(value);
+            DataList list = new DataList();
+            for (int i = 0; i < size; i++) {
+                list.add(serializeInferred(Array.get(value, i), context));
+            }
+            return list;
+        }
+
+        if (value instanceof Iterable) {
+            DataList list = new DataList();
+            for (Object child : (Iterable<?>) value) {
+                list.add(serializeInferred(child, context));
+            }
+            return list;
+        }
+
+        if (value instanceof Map) {
+            DataObject object = new DataObject();
+            for (Map.Entry entry : ((Map<?, ?>) value).entrySet()) {
+                if (entry.getKey() instanceof String) {
+                    String key = entry.getKey().toString();
+                    DataValue child = serializeInferred(entry.getValue(), context);
+                    object.add(key, child);
+                }
+            }
+            return object;
+        }
+
+        if (value instanceof SpecName) {
+            String name = ((SpecName) value).getSpecName();
+            if (DataSpecs.hasSpec(name)) {
+                return DataSpecs.getSpec(name).serialize(value, context);
+            }
         }
 
         if (DataSpecs.isSubSpec(value)) {

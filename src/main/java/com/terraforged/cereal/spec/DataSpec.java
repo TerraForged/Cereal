@@ -5,12 +5,15 @@ import com.terraforged.cereal.value.DataList;
 import com.terraforged.cereal.value.DataObject;
 import com.terraforged.cereal.value.DataValue;
 
+import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.Stream;
 
 public class DataSpec<T> {
 
@@ -36,10 +39,6 @@ public class DataSpec<T> {
         return type;
     }
 
-    public <V extends Enum<V>> V getEnum(String key, DataObject holder, Class<V> type) {
-        return Enum.valueOf(type, getValue(key, holder).asString());
-    }
-
     public <V> V get(String key, DataObject holder, Function<DataValue, V> accessor) {
         return accessor.apply(getValue(key, holder));
     }
@@ -51,6 +50,19 @@ public class DataSpec<T> {
     public <V> V get(String key, DataObject holder, Class<V> type, Context context) {
         DataObject value = holder.get(key).asObj();
         return Cereal.deserialize(value, type, context);
+    }
+
+    public <V extends Enum<V>> V getEnum(String key, DataObject holder, Class<V> type) {
+        return Enum.valueOf(type, getValue(key, holder).asString());
+    }
+
+    public <V> List<V> getList(String key, DataObject holder, Class<V> type, Context context) {
+        DataList list = holder.get(key).asList();
+        return Cereal.deserialize(list, type, context);
+    }
+
+    public <V> Stream<V> getStream(String key, DataObject holder, Class<V> type, Context context) {
+        return getList(key, holder, type, context).stream();
     }
 
     public DataValue serialize(Object value) {
