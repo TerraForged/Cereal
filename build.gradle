@@ -4,36 +4,33 @@ plugins {
 }
 
 group "com.terraforged"
-version "0.0.5-SNAPSHOT"
+version = "0.0.6-SNAPSHOT"
 
-task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
-    from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 publishing {
     publications {
-        mavenJava(MavenPublication) {
-            artifact jar
-            artifact sourcesJar
-            artifact javadocJar
+        create("mavenJava", MavenPublication) {
+            from components.java
         }
     }
 
-    if (System.getenv("MAVEN_USER") != null && System.getenv("MAVEN_PASS") != null) {
+    // Use Providers API (lazy, configuration-cache friendly) instead of System.getenv(...)
+    def mavenUser = providers.environmentVariable("MAVEN_USER")
+    def mavenPass = providers.environmentVariable("MAVEN_PASS")
+
+    if (mavenUser.isPresent() && mavenPass.isPresent()) {
         repositories {
             maven {
-                credentials {
-                    username System.getenv("MAVEN_USER")
-                    password System.getenv("MAVEN_PASS")
-                }
                 name = "nexus"
-                url = "https://io.terraforged.com/maven/"
+                url = uri("https://io.terraforged.com/maven/")
+                credentials {
+                    username = mavenUser.get()
+                    password = mavenPass.get()
+                }
             }
         }
     }
