@@ -12,17 +12,16 @@ java {
 }
 
 publishing {
-    publications {
-        create("mavenJava", MavenPublication) {
-            from components.java
-        }
-    }
-
-    // Use Providers API (lazy, configuration-cache friendly) instead of System.getenv(...)
     def mavenUser = providers.environmentVariable("MAVEN_USER")
     def mavenPass = providers.environmentVariable("MAVEN_PASS")
 
     if (mavenUser.isPresent() && mavenPass.isPresent()) {
+        publications {
+            create("mavenJava", MavenPublication) {
+                from components.java
+            }
+        }
+
         repositories {
             maven {
                 name = "nexus"
